@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Service Label -->
+    <key>Label</key>
+    <string>com.powermonitor.weekly</string>
+    
+    <!-- Script to run -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/path/to/send_power_data.sh</string>
+    </array>
+    
+    <!-- Schedule: Run every Monday at 9:00 AM -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Weekday</key>
+        <integer>1</integer>  <!-- 0 = Sunday, 1 = Monday, ..., 6 = Saturday -->
+        <key>Hour</key>
+        <integer>9</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+    
+    <!-- Standard output log -->
+    <key>StandardOutPath</key>
+    <string>/tmp/powermonitor.stdout.log</string>
+    
+    <!-- Standard error log -->
+    <key>StandardErrorPath</key>
+    <string>/tmp/powermonitor.stderr.log</string>
+    
+    <!-- Run even when user is not logged in (optional) -->
+    <key>RunAtLoad</key>
+    <false/>
+    
+    <!-- Keep the job alive if it crashes (optional) -->
+    <key>KeepAlive</key>
+    <false/>
+</dict>
+</plist>
+
