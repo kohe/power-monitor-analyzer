@@ -46,10 +46,10 @@ function doPost(e) {
         })).setMimeType(ContentService.MimeType.JSON);
       }
       
-      // Prepare all rows
-      const rows = entries.map(entry => {
+      // Process each entry and update or append
+      entries.forEach(entry => {
         const cost = entry.consumption_total * costPerKwh;
-        return [
+        const newRow = [
           entry.date,
           entry.consumption_total,
           entry.consumption_power_nap || 0,
@@ -59,13 +59,19 @@ function doPost(e) {
           cost.toFixed(2),
           new Date() // Timestamp when data was received
         ];
+        
+        // Check if date already exists
+        const existingRow = findRowByDate(sheet, entry.date);
+        
+        if (existingRow > 0) {
+          // Update existing row
+          sheet.getRange(existingRow, 1, 1, 8).setValues([newRow]);
+        } else {
+          // Append new row
+          sheet.appendRow(newRow);
+          rowsAdded++;
+        }
       });
-      
-      // Append all rows at once (more efficient)
-      if (rows.length > 0) {
-        sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, 8).setValues(rows);
-        rowsAdded = rows.length;
-      }
       
     } else {
       // Single entry mode (backward compatibility)
@@ -77,8 +83,7 @@ function doPost(e) {
       }
       
       const cost = data.consumption_total * costPerKwh;
-      
-      sheet.appendRow([
+      const newRow = [
         data.date,
         data.consumption_total,
         data.consumption_power_nap || 0,
@@ -87,9 +92,19 @@ function doPost(e) {
         costPerKwh,
         cost.toFixed(2),
         new Date()
-      ]);
+      ];
       
-      rowsAdded = 1;
+      // Check if date already exists
+      const existingRow = findRowByDate(sheet, data.date);
+      
+      if (existingRow > 0) {
+        // Update existing row
+        sheet.getRange(existingRow, 1, 1, 8).setValues([newRow]);
+      } else {
+        // Append new row
+        sheet.appendRow(newRow);
+        rowsAdded = 1;
+      }
     }
     
     return ContentService.createTextOutput(JSON.stringify({
@@ -149,6 +164,31 @@ function getOrCreateSheet(spreadsheet, deviceName) {
   }
   
   return sheet;
+}
+
+/**
+ * Find row by date in the sheet
+ * Returns row number if found, 0 if not found
+ */
+function findRowByDate(sheet, targetDate) {
+  const dataRange = sheet.getDataRange();
+  const values = dataRange.getValues();
+  
+  // Skip header row (index 0), start from row 1
+  for (let i = 1; i < values.length; i++) {
+    const rowDate = values[i][0]; // Date is in column A (index 0)
+    
+    // Convert to string for comparison (handles both string and Date objects)
+    const rowDateStr = rowDate instanceof Date ? 
+      Utilities.formatDate(rowDate, Session.getScriptTimeZone(), 'yyyy-MM-dd') : 
+      String(rowDate);
+    
+    if (rowDateStr === targetDate) {
+      return i + 1; // Return 1-based row number
+    }
+  }
+  
+  return 0; // Not found
 }
 
 /**
